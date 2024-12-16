@@ -19,9 +19,9 @@ const COMMANDS = {
   "shift+(": bracketHandler,
   "[": bracketHandler,
   // "shift+<": bracketHandler,
-  "\'": bracketHandler,
-  "\`": bracketHandler,
-  "shift+\"": bracketHandler,
+  // "\'": bracketHandler,
+  // "\`": bracketHandler,
+  // "shift+\"": bracketHandler,
 }
 
 const BRACKETS = {
@@ -34,14 +34,14 @@ const BRACKETS = {
   "\`": ["\`","\`"],
 }
 
-function getCursur(el) {
+function getCursor(el) {
   return [
     el.selectionStart,
     el.selectionEnd,
   ];
 }
 
-function setCursur(el, start, end) {
+function setCursor(el, start, end) {
   el.focus();
   el.setSelectionRange(start, end);
 }
@@ -183,7 +183,7 @@ function tabHandler(e) {
   const elem = e.target;
 
   const currValue = elem.value;
-  const [ currStart, currEnd ] = getCursur(elem);
+  const [ currStart, currEnd ] = getCursor(elem);
   const { value, start, end } = getCurrentItem(currValue, currStart, currEnd, shiftKey);
 
   // Add history
@@ -193,7 +193,7 @@ function tabHandler(e) {
     end: end,
   });
 
-  setCursur(elem, start, end);
+  setCursor(elem, start, end);
 }
 
 function commentHandler(e) {
@@ -203,7 +203,7 @@ function commentHandler(e) {
   const elem = e.target;
 
   const currValue = elem.value;
-  const [ currStart, currEnd ] = getCursur(elem);
+  const [ currStart, currEnd ] = getCursor(elem);
 
   let end = currValue.indexOf("\n", currStart);
   if (end == -1) {
@@ -248,7 +248,7 @@ function commentHandler(e) {
 
   // Set value
   elem.value = newValue;
-  setCursur(elem, newStart, newEnd);
+  setCursor(elem, newStart, newEnd);
 }
 
 function bracketHandler(e) {
@@ -259,7 +259,7 @@ function bracketHandler(e) {
 
   const [opening, closing] = BRACKETS[key];
   const currValue = elem.value;
-  const [ currStart, currEnd ] = getCursur(elem);
+  const [ currStart, currEnd ] = getCursor(elem);
 
   let newValue = currValue;
   let newStart = currStart;
@@ -286,7 +286,7 @@ function bracketHandler(e) {
 
   // Set value
   elem.value = newValue;
-  setCursur(elem, newStart, newEnd);
+  setCursor(elem, newStart, newEnd);
 }
 
 async function keydownHandler(e) {
@@ -307,7 +307,7 @@ function focusHandler(e) {
   if (!prevElement || !e.target.isSameNode(prevElement)) {
     setTimeout(function() {
       const currValue = e.target.value;
-      const [ currStart, currEnd ] = getCursur(e.target);
+      const [ currStart, currEnd ] = getCursor(e.target);
     
       addHistory(e, {
         value: currValue,
@@ -321,7 +321,7 @@ function focusHandler(e) {
 let changeTimer;
 function changeHandler(e) {
   const currValue = e.target.value;
-  const [ currStart, currEnd ] = getCursur(e.target);
+  const [ currStart, currEnd ] = getCursor(e.target);
 
   if (changeTimer) {
     clearTimeout(changeTimer);
