@@ -1,6 +1,7 @@
 # comfyui-textarea-command
 
-Add command when cursur in textarea.
+Add command and comment in textarea.  
+(e.g. // Disabled line)
 
 ## Usage  
 
