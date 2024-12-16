@@ -2,6 +2,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
+import { dynamicPrompt } from "./dynamic-prompt.js";
 
 let isSelectionEnabled = typeof window.getSelection !== "undefined",
     prevElement = null,
@@ -372,7 +373,10 @@ app.registerExtension({
 				// Override the serialization of the value to resolve dynamic prompts for all widgets supporting it in this node
         const origSerializeValue = widget.serializeValue;
         widget.serializeValue = async function(workflowNode, widgetIndex) {
-          let r = await origSerializeValue?.apply(this, arguments);
+          let r = await origSerializeValue?.apply(this, arguments) ?? widget.value;
+
+          // Bugfix: Custom-Script presetText.js has overwrite original dynamicPrompt
+          r = dynamicPrompt(r);
 
           // Remove comment
           try {
@@ -389,6 +393,10 @@ app.registerExtension({
           } catch(err) {
             console.error(err);
           }
+
+          // Overwrite the value in the serialized workflow pnginfo
+          if (workflowNode?.widgets_values)
+            workflowNode.widgets_values[widgetIndex] = r
 
           return r;
         }
