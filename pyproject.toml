@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-textarea-command"
+description = "Add command when cursur in textarea."
+version = "1.0.0"
+license = { file = "LICENSE" }
+
+[project.urls]
+Repository = "https://github.com/shinich39/comfyui-textarea-command"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "shinich39"
+DisplayName = "comfyui-textarea-command"
+Icon = ""
