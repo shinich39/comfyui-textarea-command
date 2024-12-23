@@ -2,7 +2,9 @@
 
 import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
-import { dynamicPrompt } from "./dynamic-prompt.js";
+import { disablePrompt } from "./libs/disable-prompt.js";
+import { dynamicPrompt } from "./libs/dynamic-prompt.js";
+import { randomPrompt } from "./libs/random-prompt.js";
 
 let isSelectionEnabled = typeof window.getSelection !== "undefined",
     prevElement = null,
@@ -68,7 +70,7 @@ function getCommand(e) {
 
 function parseString(str) {
   let offset = 0;
-  return str.split(/[,()[\]{}|]+/)
+  return str.split(/[,()[\]{}|\n]+/)
     .map((item) => item.trim())
     .filter(Boolean)
     .map((item) => {
@@ -138,9 +140,9 @@ function getNextHistory(e) {
 }
 
 function addHistory(e, newHistory) {
-  if (changeTimer) {
-    clearTimeout(changeTimer);
-  }
+  // if (changeTimer) {
+  //   clearTimeout(changeTimer);
+  // }
 
   if (!prevElement || !e.target.isSameNode(prevElement)) {
     prevElement = e.target;
@@ -323,17 +325,23 @@ function changeHandler(e) {
   const currValue = e.target.value;
   const [ currStart, currEnd ] = getCursor(e.target);
 
-  if (changeTimer) {
-    clearTimeout(changeTimer);
-  }
+  addHistory(e, {
+    value: currValue,
+    start: currStart,
+    end: currEnd,
+  });
 
-  changeTimer = setTimeout(function() {
-    addHistory(e, {
-      value: currValue,
-      start: currStart,
-      end: currEnd,
-    });
-  }, 768);
+  // if (changeTimer) {
+  //   clearTimeout(changeTimer);
+  // }
+
+  // changeTimer = setTimeout(function() {
+  //   addHistory(e, {
+  //     value: currValue,
+  //     start: currStart,
+  //     end: currEnd,
+  //   });
+  // }, 768);
 }
 
 app.registerExtension({
@@ -375,24 +383,14 @@ app.registerExtension({
         widget.serializeValue = async function(workflowNode, widgetIndex) {
           let r = await origSerializeValue?.apply(this, arguments) ?? widget.value;
 
+          // Remove comment
+          r = disablePrompt(r);
+          
           // Bugfix: Custom-Script presetText.js has overwrite original dynamicPrompt
           r = dynamicPrompt(r);
 
-          // Remove comment
-          try {
-            r = r.split("\n")
-              .map(item => {
-                if (item.indexOf("//") == 0) {
-                  return null;
-                } else {
-                  return item;
-                }
-              })
-              .filter(item => item !== null)
-              .join("\n");
-          } catch(err) {
-            console.error(err);
-          }
+          // Split by RANDOM
+          r = randomPrompt(r);
 
           // Overwrite the value in the serialized workflow pnginfo
           if (workflowNode?.widgets_values)
