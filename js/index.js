@@ -93,7 +93,7 @@ function getCurrentItem(str, currStart, currEnd, reverse) {
       const { value, start, end } = items[i];
       if (start == currStart && end == currEnd) {
         return items[i + 1] || items[0];
-      } else if ((start <= currStart && end > currStart) || (start > currStart)) {
+      } else if ((start <= currStart && end >= currStart) || (start > currStart)) {
         return items[i];
       }
     }
@@ -103,7 +103,7 @@ function getCurrentItem(str, currStart, currEnd, reverse) {
       const { value, start, end } = items[i];
       if (start == currStart && end == currEnd) {
         return items[i - 1] || items[items.length - 1];
-      } else if ((start <= currStart && end > currStart) || (end < currStart)) {
+      } else if ((start <= currStart && end >= currStart) || (end < currStart)) {
         return items[i];
       }
     }
