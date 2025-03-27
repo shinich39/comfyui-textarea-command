@@ -1,6 +1,6 @@
 # comfyui-textarea-command
 
-Add shortcuts for fast writing prompt in textarea.    
+Add shortcuts for quick writing in textarea.  
 Nestable dynamic prompt.  
 Tab to quickly select a token.  
 Improved undo, redo history in textarea.  
@@ -25,8 +25,6 @@ Improved undo, redo history in textarea.
 ```
 {{red|blue|green}|purple} sky
 ```
-
-Result  
 
 ```
 purple sky

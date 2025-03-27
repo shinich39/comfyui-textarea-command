@@ -3,7 +3,7 @@
 @title: comfyui-textarea-command
 @nickname: comfyui-textarea-command
 @version: 1.0.1
-@description: Add shortcuts for fast writing prompt in textarea.    
+@description: Add shortcuts for quick writing in textarea.    
 Nestable dynamic prompt.  
 Tab to quickly select a token.  
 Improved undo, redo history in textarea.  
