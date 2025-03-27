@@ -18,7 +18,7 @@ const COMMANDS = {
   "shift+{": bracketHandler,
   "shift+(": bracketHandler,
   "[": bracketHandler,
-  "enter": lineBreakHandler,
+  // "enter": lineBreakHandler,
   // "shift+<": bracketHandler,
   // "\'": bracketHandler,
   // "\`": bracketHandler,
@@ -371,6 +371,7 @@ function bracketHandler(e) {
   setCursor(elem, newStart, newEnd);
 }
 
+// conflict with pysssss-autocomplete
 function lineBreakHandler(e) {
   e.preventDefault();
   e.stopPropagation();
