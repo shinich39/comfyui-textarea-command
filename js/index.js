@@ -18,7 +18,7 @@ const COMMANDS = {
   "shift+{": bracketHandler,
   "shift+(": bracketHandler,
   "[": bracketHandler,
-  // "enter": lineBreakHandler,
+  // "enter": linebreakHandler,
   // "shift+<": bracketHandler,
   // "\'": bracketHandler,
   // "\`": bracketHandler,
@@ -372,7 +372,7 @@ function bracketHandler(e) {
 }
 
 // conflict with pysssss-autocomplete
-function lineBreakHandler(e) {
+function linebreakHandler(e) {
   e.preventDefault();
   e.stopPropagation();
   const { key, shiftKey, ctrlKey } = parseKey(e);
