@@ -26,6 +26,8 @@ Improved undo, redo history in textarea.
 {{red|blue|green}|purple} sky
 ```
 
+Result
+
 ```
 purple sky
 ```
