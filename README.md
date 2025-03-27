@@ -1,7 +1,9 @@
 # comfyui-textarea-command
 
-Add command and comment in textarea.  
-(e.g. // Disabled line)
+Add shortcuts for fast writing prompt in textarea.    
+Nestable dynamic prompt.  
+Tab to quickly select a token.  
+Improved undo, redo history in textarea.  
 
 ## Usage  
 
@@ -18,39 +20,14 @@ Add command and comment in textarea.
 | Ctrl+Z       | Undo                 |
 | Ctrl+Shift+Z | Redo                 |
 
-- Comment
-
-The lines following "//" are not applied in generation process.  
+- Nestable dynamic prompt
 
 ```
-// blue sky, detailed background
-red sky, simple background
-```
-
-Result
-
-```
-red sky, simple background
-```
-
-- Random prompt
-
-You can setup occurrence probability using strength.  
-The strength is applied to prompts that follow.  
-Default strength is 1.  
-
-```
-red sky,
-RANDOM:2
-green sky, 
-a cat,
-RANDOM
-blue sky, detailed background
+{{red|blue|green}|purple} sky
 ```
 
 Result  
 
 ```
-green sky, 
-a cat,
+purple sky
 ```

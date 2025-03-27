@@ -1,9 +1,12 @@
 """
 @author: shinich39
-@title: textarea-command
-@nickname: textarea-command
-@version: 1.0.0
-@description: Add command and comment in textarea.  (e.g. // Disabled line)
+@title: comfyui-textarea-command
+@nickname: comfyui-textarea-command
+@version: 1.0.1
+@description: Add shortcuts for fast writing prompt in textarea.    
+Nestable dynamic prompt.  
+Tab to quickly select a token.  
+Improved undo, redo history in textarea.  
 """
 
 WEB_DIRECTORY = "./js"

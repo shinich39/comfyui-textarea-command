@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-textarea-command"
 description = "Add command and comment in textarea.  (e.g. // Disabled line)"
-version = "1.0.0"
+version = "1.0.1"
 license = { file = "LICENSE" }
 
 [project.urls]

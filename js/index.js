@@ -2,13 +2,11 @@
 
 import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
-import { disablePrompt } from "./libs/disable-prompt.js";
-import { dynamicPrompt } from "./libs/dynamic-prompt.js";
-import { randomPrompt } from "./libs/random-prompt.js";
 
 let isSelectionEnabled = typeof window.getSelection !== "undefined",
     prevElement = null,
     historyIndex = 0,
+    changeTimer = null,
     history = [];
 
 const COMMANDS = {
@@ -20,6 +18,7 @@ const COMMANDS = {
   "shift+{": bracketHandler,
   "shift+(": bracketHandler,
   "[": bracketHandler,
+  "enter": lineBreakHandler,
   // "shift+<": bracketHandler,
   // "\'": bracketHandler,
   // "\`": bracketHandler,
@@ -48,6 +47,20 @@ function setCursor(el, start, end) {
   el.setSelectionRange(start, end);
 }
 
+function getLevel(str) {
+  let n = 0;
+  for (let i = str.length - 1; i >= 0; i--) {
+    const ch = str[i];
+    if (str[i] === "}" && (!str[i-1] || str[i-1] !== "\\")) {
+      n--;
+    }
+    if (str[i] === "{" && (!str[i-1] || str[i-1] !== "\\")) {
+      n++;
+    }
+  }
+  return Math.max(0, n);
+}
+
 function parseKey(e) {
   const { key } = e;
   const shiftKey = e.shiftKey;
@@ -68,6 +81,10 @@ function getCommand(e) {
   return COMMANDS[getKey(e)];
 }
 
+function stripComments(str) {
+  return str.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
+}
+
 function parseString(str) {
   let offset = 0;
   return str.split(/[,()[\]{}|\n]+/)
@@ -84,6 +101,34 @@ function parseString(str) {
         end: index + item.length,
       }
     });
+}
+
+function dynamicPrompt(prompt) {
+  let offset = 0, i = prompt.indexOf("{", offset);
+  while(i > -1) {
+    offset = i + 1;
+    if (prompt.charAt(i - 1) !== "\\") {
+      const closingIndex = prompt.indexOf("}", offset);
+      if (closingIndex === -1) {
+        break;
+      }
+  
+      const nextIndex = prompt.indexOf("{", offset);
+      if (nextIndex === -1 || closingIndex < nextIndex) {
+        const items = prompt.substring(i + 1, closingIndex).split("|");
+        const item = items[Math.floor(Math.random() * items.length)];
+  
+        prompt = prompt.substring(0, i) + 
+          item + 
+          prompt.substring(closingIndex + 1);
+          
+        offset = 0; 
+      }
+    }
+    i = prompt.indexOf("{", offset);
+  }
+
+  return prompt;
 }
 
 function getCurrentItem(str, currStart, currEnd, reverse) {
@@ -149,7 +194,16 @@ function addHistory(e, newHistory) {
     history = [newHistory];
     historyIndex = history.length - 1;
   } else {
-    history = [...history.slice(0, historyIndex + 1), newHistory];
+    history = history.slice(0, historyIndex + 1);
+    const lastHistory = history[history.length - 1];
+    if (
+      !lastHistory ||
+      lastHistory.value !== newHistory.value ||
+      lastHistory.start !== newHistory.start ||
+      lastHistory.end !== newHistory.end
+    ) {
+      history.push(newHistory);
+    }
     historyIndex = history.length - 1;
   }
 }
@@ -190,6 +244,11 @@ function tabHandler(e) {
 
   // Add history
   addHistory(e, {
+    value: currValue,
+    start: currStart,
+    end: currEnd,
+  });
+  addHistory(e, {
     value: elem.value,
     start: start,
     end: end,
@@ -207,41 +266,57 @@ function commentHandler(e) {
   const currValue = elem.value;
   const [ currStart, currEnd ] = getCursor(elem);
 
-  let end = currValue.indexOf("\n", currStart);
-  if (end == -1) {
-    end = currValue.length;
+  const lines = currValue.split(/\n/);
+  for (let i = 0; i < lines.length - 1; i++) {
+    lines[i] += "\n";
+  }
+ 
+  const selectedLineIndexes = [];
+  let offset = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const start = offset;
+    const end = offset + line.length - 1;
+
+    offset += line.length;
+
+    if (start > currEnd || end < currStart) {
+      continue;
+    }
+
+    selectedLineIndexes.push(i);
   }
 
-  let start = 0;
-  if (end > 0) {
-    start = currValue.lastIndexOf("\n", end - 1);
-    if (start == -1) {
-      start = 0;
-    } else {
-      start += 1;
+  let isComment = true;
+  for (const i of selectedLineIndexes) {
+    if (!(/^\/\//.test(lines[i]))) {
+      isComment = false;
+      break;
     }
   }
 
-  const left = currValue.substring(0, start);
-  const center = currValue.substring(start, end);
-  const right = currValue.substring(end);
+  const changes = [];
+  for (const i of selectedLineIndexes) {
+    const line = lines[i];
+    if (!isComment) {
+      lines[i] = "// " + line;
+    } else {
+      lines[i] = line.replace(/^\/\/[^\S\r\n]*/, "");
+    }
 
-  let newValue = left;
-  let newStart = currStart;
-  let newEnd = currEnd;
-  if (/^\/\//.test(center)) {
-    const newCenter = center.replace(/^\/\/ ?/, "");
-    newValue += newCenter;
-    newStart -= center.length - newCenter.length;
-    newEnd -= center.length - newCenter.length;
-  } else {
-    newValue += "// " + center;
-    newStart += 3;
-    newEnd += 3;
+    changes.push(lines[i].length - line.length);
   }
-  newValue += right;
+
+  const newValue = lines.join("");
+  const newStart = currStart + changes[0];
+  const newEnd = currEnd + changes.reduce((acc, cur) => acc + cur, 0);
 
   // Add history
+  addHistory(e, {
+    value: currValue,
+    start: currStart,
+    end: currEnd,
+  });
   addHistory(e, {
     value: newValue,
     start: newStart,
@@ -280,6 +355,53 @@ function bracketHandler(e) {
   newEnd = left.length + opening.length + center.length;
 
   // Add history
+  addHistory(e, {
+    value: currValue,
+    start: currStart,
+    end: currEnd,
+  });
+  addHistory(e, {
+    value: newValue,
+    start: newStart,
+    end: newEnd,
+  });
+
+  // Set value
+  elem.value = newValue;
+  setCursor(elem, newStart, newEnd);
+}
+
+function lineBreakHandler(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const { key, shiftKey, ctrlKey } = parseKey(e);
+  const elem = e.target;
+  const currValue = elem.value;
+  const [ currStart, currEnd ] = getCursor(elem);
+  const level = getLevel(currValue.substring(0, currStart));
+
+  let newValue = currValue;
+  let newStart = currStart;
+  let newEnd = currEnd;
+
+  let left = currValue.substring(0, currStart);
+  let center = "\n" + Array(level * 2).fill(" ").join("");
+  let right = currValue.substring(currEnd);
+
+  if (right.charAt(0) === "}") {
+    right = "\n" + Array((level - 1) * 2).fill(" ").join("") + right;
+  }
+
+  newValue = left + center + right;
+  newStart = left.length + center.length;
+  newEnd = left.length + center.length;
+
+  // Add history
+  addHistory(e, {
+    value: currValue,
+    start: currStart,
+    end: currEnd,
+  });
   addHistory(e, {
     value: newValue,
     start: newStart,
@@ -320,7 +442,19 @@ function focusHandler(e) {
   }
 }
 
-let changeTimer;
+function clickHandler(e) {
+  setTimeout(function() {
+    const currValue = e.target.value;
+    const [ currStart, currEnd ] = getCursor(e.target);
+  
+    addHistory(e, {
+      value: currValue,
+      start: currStart,
+      end: currEnd,
+    });
+  }, 10);
+}
+
 function changeHandler(e) {
   const currValue = e.target.value;
   const [ currStart, currEnd ] = getCursor(e.target);
@@ -366,6 +500,7 @@ app.registerExtension({
       elem.addEventListener("keydown", keydownHandler, true);
       elem.addEventListener("focus", focusHandler, true);
       elem.addEventListener("input", changeHandler, true);
+      elem.addEventListener("click", clickHandler, true);
 
       return r;
     };
@@ -383,18 +518,16 @@ app.registerExtension({
         widget.serializeValue = async function(workflowNode, widgetIndex) {
           let r = await origSerializeValue?.apply(this, arguments) ?? widget.value;
 
-          // Remove comment
-          r = disablePrompt(r);
-          
           // Bugfix: Custom-Script presetText.js has overwrite original dynamicPrompt
+          r = stripComments(r);
           r = dynamicPrompt(r);
-
-          // Split by RANDOM
-          r = randomPrompt(r);
 
           // Overwrite the value in the serialized workflow pnginfo
           if (workflowNode?.widgets_values)
             workflowNode.widgets_values[widgetIndex] = r
+
+          // Debug
+          // console.log(r);
 
           return r;
         }
