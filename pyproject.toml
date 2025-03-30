@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-textarea-command"
 description = "Add shortcuts for quick writing in textarea. Nestable dynamic prompt. Tab to quickly select a token. Improved undo, redo history in textarea."
-version = "1.0.3"
+version = "1.0.4"
 license = { file = "LICENSE" }
 
 [project.urls]

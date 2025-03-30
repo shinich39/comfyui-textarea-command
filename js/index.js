@@ -1,5 +1,6 @@
 "use strict";
 
+import { api } from "../../../scripts/api.js";
 import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
 
@@ -104,7 +105,8 @@ function parseString(str) {
 }
 
 function dynamicPrompt(prompt) {
-  let offset = 0, i = prompt.indexOf("{", offset);
+  let offset = 0, 
+      i = prompt.indexOf("{", offset);
   while(i > -1) {
     offset = i + 1;
     if (prompt.charAt(i - 1) !== "\\") {
@@ -113,8 +115,8 @@ function dynamicPrompt(prompt) {
         break;
       }
   
-      const nextIndex = prompt.indexOf("{", offset);
-      if (nextIndex === -1 || closingIndex < nextIndex) {
+      const nextOpeningIndex = prompt.indexOf("{", offset);
+      if (nextOpeningIndex === -1 || closingIndex < nextOpeningIndex) {
         const items = prompt.substring(i + 1, closingIndex).split("|");
         const item = items[Math.floor(Math.random() * items.length)];
   
@@ -524,11 +526,12 @@ app.registerExtension({
           r = dynamicPrompt(r);
 
           // Overwrite the value in the serialized workflow pnginfo
-          if (workflowNode?.widgets_values)
-            workflowNode.widgets_values[widgetIndex] = r
+          if (workflowNode?.widgets_values) {
+            workflowNode.widgets_values[widgetIndex] = r;
+          }
 
           // Debug
-          // console.log(r);
+          // console.log("[comfyui-textarea-command]", r);
 
           return r;
         }
@@ -536,3 +539,35 @@ app.registerExtension({
 		}
 	},
 });
+
+// Fix selected values via DynamicPrompt
+// Synchronize workflow values with prompt(output) values
+// {red|green|blue} => red
+;(() => {
+  const origFunc = api.queuePrompt;
+  api.queuePrompt = async function(...args) {
+    const { output, workflow } = args[1];
+    for (const node of app.graph.nodes) {
+      if (!node.widgets) {
+        continue;
+      }
+      for (let i = 0; i < node.widgets.length; i++) {
+        const widget = node.widgets[i];
+        if (!widget.dynamicPrompts) {
+          continue;
+        }
+        const serializedValue = output[node.id]?.inputs[widget.name];
+        const serializedNode = workflow.nodes.find((item) => item.id === node.id);
+        if (
+          serializedValue && 
+          serializedNode && 
+          typeof serializedNode.widgets_values[i] === typeof serializedValue
+        ) {
+          serializedNode.widgets_values[i] = serializedValue;
+        }
+      }
+    }
+
+    return await origFunc.call(api, ...args);
+  }
+})();
